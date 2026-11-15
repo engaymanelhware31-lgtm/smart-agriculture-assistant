@@ -1,18 +1,6 @@
-# Editors
-.vscode/
-.idea/
-
-# OS
 .DS_Store
 Thumbs.db
-
-# Environment secrets
+.vscode/
+.idea/
 .env
 .env.*
-!.env.example
-
-# Python (for future backend)
-__pycache__/
-*.py[cod]
-.venv/
-venv/

@@ -1,50 +1,124 @@
-// بيانات تجريبية للواجهة فقط. ستُنقل لاحقاً إلى قاعدة بيانات موثوقة.
-const categories = ["الكل","الخضروات","الفاكهة","المحاصيل الحقلية","النباتات الطبية والعطرية","المحاصيل الزيتية"];
-const crops = [
-  {id:1,name:"الطماطم",category:"الخضروات",emoji:"🍅",description:"محصول خضري ثمري",info:["اختيار الصنف يعتمد على المنطقة وموعد الزراعة وطريقة الإنتاج.","تختلف مواعيد الزراعة والري والتسميد حسب المحافظة والتربة.","يجب الرجوع إلى التوصيات المحلية المعتمدة قبل تحديد الجرعات."]},
-  {id:2,name:"البطاطس",category:"الخضروات",emoji:"🥔",description:"محصول درني",info:["تُختار التقاوي المعتمدة والخالية من الأمراض.","تختلف مواعيد الزراعة حسب العروة والمنطقة.","تُحدد احتياجات الري والتسميد وفق تحليل التربة ومراحل النمو."]},
-  {id:3,name:"الخيار",category:"الخضروات",emoji:"🥒",description:"محصول خضري ثمري",info:["توجد أصناف للزراعة المكشوفة وأخرى للصوب.","تُراعى درجات الحرارة وطريقة التربية عند اختيار الصنف.","تُضبط برامج الري والتسميد وفق مرحلة النمو."]},
-  {id:4,name:"الفلفل",category:"الخضروات",emoji:"🫑",description:"محصول خضري ثمري",info:["تتوفر أصناف وألوان متعددة.","يُراعى اختيار الصنف المناسب للمنطقة ونظام الزراعة.","تُراقب الآفات والأمراض بصفة دورية."]},
-  {id:5,name:"المانجو",category:"الفاكهة",emoji:"🥭",description:"محصول فاكهة بستاني",info:["اختيار الصنف يرتبط بالمناخ وملاءمة المنطقة.","تختلف الخدمة والتقليم والتسميد حسب عمر الأشجار.","يُحدد موعد الجمع وفق نضج الثمار والصنف."]},
-  {id:6,name:"العنب",category:"الفاكهة",emoji:"🍇",description:"محصول فاكهة متساقط الأوراق",info:["تُختار الأصناف وفق الغرض التسويقي والبيئة.","تختلف مسافات الزراعة حسب الصنف ونظام التربية.","تُدار عمليات التقليم والري والتسميد حسب مرحلة النمو."]},
-  {id:7,name:"القمح",category:"المحاصيل الحقلية",emoji:"🌾",description:"محصول حبوب شتوي",info:["يُستخدم تقاوي معتمدة وملائمة للمنطقة.","تُحدد كمية التقاوي وموعد الزراعة وفق التوصيات الرسمية للمحافظة.","يراعى انتظام الري والتسميد ومتابعة الحشائش."]},
-  {id:8,name:"الذرة الشامية",category:"المحاصيل الحقلية",emoji:"🌽",description:"محصول حبوب صيفي",info:["يُختار الهجين حسب المنطقة والغرض من الإنتاج.","تُراعى المسافات والكثافة النباتية الموصى بها للهجين.","تُتابع احتياجات المياه خلال مراحل النمو الحساسة."]},
-  {id:9,name:"النعناع",category:"النباتات الطبية والعطرية",emoji:"🌿",description:"نبات عطري",info:["تُختار مادة الإكثار السليمة والصنف المناسب.","تختلف مواعيد الحش حسب المنطقة والغرض من الإنتاج.","تُراعى جودة مياه الري والصرف."]},
-  {id:10,name:"عباد الشمس",category:"المحاصيل الزيتية",emoji:"🌻",description:"محصول زيتي",info:["يُختار الصنف أو الهجين حسب المنطقة وموعد الزراعة.","تُحدد الكثافة وفق توصية الصنف وطبيعة الأرض.","تُراعى احتياجات المياه خلال التزهير وامتلاء البذور."]}
-];
-let activeCategory = "الكل";
-const grid = document.getElementById("cropGrid");
-const filters = document.getElementById("categoryFilters");
-const search = document.getElementById("cropSearch");
-const dialog = document.getElementById("cropDialog");
+const DATA_URL = "data/crops.json";
+const LOCAL_KEY = "saa_local_crops_v1";
+let categories = [];
+let crops = [];
+let activeCategory = "all";
+let selectedCrop = null;
+let selectedTab = "varieties";
 
-function renderFilters(){
-  filters.innerHTML = categories.map(c => `<button class="filter-btn ${c===activeCategory?"active":""}" data-category="${c}">${c}</button>`).join("");
-  filters.querySelectorAll("button").forEach(btn => btn.addEventListener("click",()=>{
-    activeCategory=btn.dataset.category; renderFilters(); renderCrops();
+const $ = (id) => document.getElementById(id);
+const categoryName = (id) => categories.find(c => c.id === id)?.name || "تصنيف آخر";
+
+async function init(){
+  try{
+    const response = await fetch(DATA_URL);
+    if(!response.ok) throw new Error("تعذر تحميل ملف المحاصيل");
+    const data = await response.json();
+    categories = data.categories || [];
+    crops = data.crops || [];
+    const local = JSON.parse(localStorage.getItem(LOCAL_KEY) || "[]");
+    crops = [...crops, ...local.filter(item => !crops.some(c => c.id === item.id))];
+    renderCategories();
+    renderAdminCategories();
+    renderCrops();
+    $("cropCount").textContent = crops.length;
+    bindEvents();
+  }catch(error){
+    $("cropGrid").innerHTML = `<div class="empty">تعذر تحميل بيانات المحاصيل. تأكد من رفع مجلد data مع ملفات المشروع.</div>`;
+    console.error(error);
+  }
+}
+function renderCategories(){
+  $("categoryStrip").innerHTML = categories.map(cat =>
+    `<button class="category-btn ${cat.id===activeCategory?"active":""}" data-id="${escapeHTML(cat.id)}">${cat.icon} ${escapeHTML(cat.name)}</button>`
+  ).join("");
+  $("categoryStrip").querySelectorAll("button").forEach(btn => btn.addEventListener("click",()=>{
+    activeCategory=btn.dataset.id; renderCategories(); renderCrops();
   }));
 }
+function renderAdminCategories(){
+  $("adminCategory").innerHTML = categories.filter(c=>c.id!=="all").map(c=>`<option value="${escapeHTML(c.id)}">${escapeHTML(c.name)}</option>`).join("");
+}
 function renderCrops(){
-  const term=search.value.trim().toLowerCase();
-  const shown=crops.filter(c=>(activeCategory==="الكل"||c.category===activeCategory) && c.name.toLowerCase().includes(term));
-  grid.innerHTML=shown.length?shown.map(c=>`
+  const query = $("searchInput").value.trim().toLocaleLowerCase("ar");
+  const sort = $("sortSelect").value;
+  let list = crops.filter(c => (activeCategory==="all" || c.category===activeCategory) &&
+    (`${c.name} ${c.scientificName||""} ${categoryName(c.category)}`).toLocaleLowerCase("ar").includes(query));
+  list.sort((a,b)=> sort==="category" ? categoryName(a.category).localeCompare(categoryName(b.category),"ar") || a.name.localeCompare(b.name,"ar") : a.name.localeCompare(b.name,"ar"));
+  $("resultCount").textContent = `${list.length} محصول`;
+  $("cropGrid").innerHTML = list.map(c=>`
     <article class="crop-card">
-      <div class="crop-emoji" aria-hidden="true">${c.emoji}</div>
-      <h3>${c.name}</h3><p>${c.category} · ${c.description}</p>
-      <button class="details-btn" data-id="${c.id}">عرض ملف المحصول</button>
-    </article>`).join(""):`<p>لا توجد نتائج مطابقة. جرّب كلمة بحث أخرى.</p>`;
-  grid.querySelectorAll(".details-btn").forEach(btn=>btn.addEventListener("click",()=>showCrop(Number(btn.dataset.id))));
+      <div class="crop-art" aria-hidden="true">${escapeHTML(c.emoji||"🌱")}</div>
+      <h3>${escapeHTML(c.name)}</h3>
+      <div class="crop-meta">${escapeHTML(categoryName(c.category))} · ${escapeHTML(c.type||"محصول زراعي")}</div>
+      <div class="card-bottom"><button class="details-btn" data-id="${escapeHTML(c.id)}">الملف الزراعي</button><span class="scientific">${escapeHTML(c.scientificName||"")}</span></div>
+    </article>`).join("");
+  $("emptyState").classList.toggle("hidden",list.length!==0);
+  $("cropGrid").querySelectorAll(".details-btn").forEach(btn=>btn.addEventListener("click",()=>openCrop(btn.dataset.id)));
 }
-function showCrop(id){
-  const crop=crops.find(c=>c.id===id); if(!crop)return;
-  document.getElementById("cropDetails").innerHTML=`
-    <div class="crop-emoji">${crop.emoji}</div><span class="eyebrow">${crop.category}</span>
-    <h2>${crop.name}</h2><p>${crop.description}</p><h3>معلومات أساسية</h3>
-    <ul class="detail-list">${crop.info.map(x=>`<li>${x}</li>`).join("")}</ul>
-    <p class="note">هذه معلومات تمهيدية وليست برنامجاً زراعياً معتمداً. ستُضاف البيانات التفصيلية بمراجع موثوقة لكل منطقة.</p>`;
-  dialog.showModal();
+const tabs = [
+  ["varieties","الأصناف والتقاوي"],["planting","مواعيد الزراعة"],["spacing","المسافات والزراعة"],
+  ["irrigation","الري"],["fertilization","التسميد"],["protection","الأمراض والمكافحة"],
+  ["harvest","الحصاد"],["yield","الإنتاجية"]
+];
+function openCrop(id){
+  selectedCrop = crops.find(c=>c.id===id);
+  if(!selectedCrop) return;
+  selectedTab="varieties";
+  $("cropDetail").innerHTML=`
+    <div class="detail-top"><div class="detail-emoji">${escapeHTML(selectedCrop.emoji||"🌱")}</div><div><span class="eyebrow">${escapeHTML(categoryName(selectedCrop.category))}</span><h2>${escapeHTML(selectedCrop.name)}</h2><p>${escapeHTML(selectedCrop.scientificName||"")} · ${escapeHTML(selectedCrop.type||"")}</p></div></div>
+    <p class="muted">${escapeHTML(selectedCrop.summary||"ملف المحصول")}</p>
+    <div class="detail-tabs">${tabs.map(([key,label])=>`<button class="detail-tab ${key===selectedTab?"active":""}" data-tab="${key}">${label}</button>`).join("")}</div>
+    <div class="detail-content" id="detailContent"></div>
+    <p class="source-note">لا تعتمد أي جرعات أو مواعيد قبل إضافة مرجع زراعي موثق والتحقق من ملاءمته للموقع والموسم.</p>`;
+  renderDetailTab();
+  $("cropDetail").querySelectorAll(".detail-tab").forEach(btn=>btn.addEventListener("click",()=>{
+    selectedTab=btn.dataset.tab;
+    $("cropDetail").querySelectorAll(".detail-tab").forEach(b=>b.classList.toggle("active",b===btn));
+    renderDetailTab();
+  }));
+  $("cropDialog").showModal();
 }
-document.getElementById("closeDialog").addEventListener("click",()=>dialog.close());
-dialog.addEventListener("click",e=>{if(e.target===dialog)dialog.close()});
-search.addEventListener("input",renderCrops);
-renderFilters(); renderCrops();
+function renderDetailTab(){
+  const text = selectedCrop.sections?.[selectedTab] || "لم تتم إضافة بيانات موثقة لهذا القسم بعد.";
+  $("detailContent").textContent = text;
+}
+function bindEvents(){
+  $("searchInput").addEventListener("input",renderCrops);
+  $("sortSelect").addEventListener("change",renderCrops);
+  $("dialogClose").addEventListener("click",()=>$("cropDialog").close());
+  $("adminClose").addEventListener("click",()=>$("adminDialog").close());
+  $("adminOpen").addEventListener("click",()=>$("adminDialog").showModal());
+  $("cropDialog").addEventListener("click",e=>{if(e.target===$("cropDialog")) $("cropDialog").close();});
+  $("adminDialog").addEventListener("click",e=>{if(e.target===$("adminDialog")) $("adminDialog").close();});
+  $("addCropForm").addEventListener("submit",addLocalCrop);
+  $("exportData").addEventListener("click",exportCrops);
+}
+function addLocalCrop(event){
+  event.preventDefault();
+  const form = new FormData(event.currentTarget);
+  const name = String(form.get("name")||"").trim();
+  if(!name) return;
+  const crop = {
+    id:"local_"+Date.now(), name, scientificName:String(form.get("scientificName")||"").trim(),
+    category:String(form.get("category")), emoji:String(form.get("emoji")||"🌱"),
+    type:"محصول مضاف محلياً", summary:"تمت إضافة هذا المحصول محلياً من لوحة إدارة المحتوى.",
+    sections:Object.fromEntries(tabs.map(([key])=>[key,"لم تتم إضافة بيانات موثقة لهذا القسم بعد."])), sources:[]
+  };
+  const local = JSON.parse(localStorage.getItem(LOCAL_KEY)||"[]");
+  local.push(crop); localStorage.setItem(LOCAL_KEY,JSON.stringify(local));
+  crops.push(crop); $("cropCount").textContent=crops.length;
+  activeCategory="all"; renderCategories(); renderCrops();
+  event.currentTarget.reset(); $("adminDialog").close();
+  alert("تم حفظ المحصول في هذا المتصفح فقط. لتعميمه على الموقع، حدّث ملف data/crops.json وارفعه إلى GitHub.");
+}
+function exportCrops(){
+  const data = JSON.stringify({categories,crops},null,2);
+  const blob = new Blob([data],{type:"application/json;charset=utf-8"});
+  const url=URL.createObjectURL(blob); const a=document.createElement("a");
+  a.href=url; a.download="crops-export.json"; a.click(); URL.revokeObjectURL(url);
+}
+function escapeHTML(value){
+  return String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+}
+init();
