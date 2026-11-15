@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="مساعد الزراعة الذكي - موسوعة المحاصيل وإدارة المزرعة">
+  <title>مساعد الزراعة الذكي</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#" aria-label="الصفحة الرئيسية">
+      <span class="brand-mark">🌱</span>
+      <span><strong>مساعد الزراعة الذكي</strong><small>دليلك من الزراعة إلى الحصاد</small></span>
+    </a>
+    <nav>
+      <a href="#crops">دليل المحاصيل</a>
+      <a href="#tools">الحاسبات</a>
+      <a href="#farm">مزرعتي</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-copy">
+        <span class="eyebrow">الموسوعة الزراعية الذكية</span>
+        <h1>ازرع بوعي،<br><span>واحصد بثقة.</span></h1>
+        <p>دليل عملي للمحاصيل والأصناف ومواعيد الزراعة والري والتسميد والحصاد، مع أدوات تساعدك على تنظيم مزرعتك.</p>
+        <a class="primary-btn" href="#crops">استكشف المحاصيل</a>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="sun"></div><div class="field field-back"></div><div class="field field-front"></div>
+        <div class="plant">🌾</div>
+      </div>
+    </section>
+
+    <section class="section" id="crops">
+      <div class="section-heading">
+        <div><span class="eyebrow">ابدأ من هنا</span><h2>دليل المحاصيل</h2></div>
+        <label class="search"><span>⌕</span><input id="cropSearch" type="search" placeholder="ابحث عن محصول..." aria-label="ابحث عن محصول"></label>
+      </div>
+      <div class="filters" id="categoryFilters" aria-label="تصنيفات المحاصيل"></div>
+      <div class="crop-grid" id="cropGrid"></div>
+      <p class="note">المعلومات المعروضة حالياً بيانات تجريبية لواجهة النسخة الأولى، وليست توصيات زراعية للاستخدام الميداني.</p>
+    </section>
+
+    <section class="section tools-section" id="tools">
+      <span class="eyebrow">أدوات عملية</span><h2>الحاسبات الزراعية</h2>
+      <div class="tool-grid">
+        <article class="tool-card"><span>🌱</span><h3>حاسبة مساحة الزراعة</h3><p>تجهيز أساس لحساب احتياجات المساحة.</p><span class="coming">قريباً</span></article>
+        <article class="tool-card"><span>💧</span><h3>متابعة الري</h3><p>تنظيم مواعيد الري وتسجيل العمليات.</p><span class="coming">قريباً</span></article>
+        <article class="tool-card"><span>🧪</span><h3>حساب التسميد</h3><p>حساب الكميات بناءً على توصية موثوقة.</p><span class="coming">قريباً</span></article>
+      </div>
+    </section>
+
+    <section class="section farm-panel" id="farm">
+      <div><span class="eyebrow">إدارة شخصية</span><h2>مزرعتي</h2><p>ستتمكن لاحقاً من تسجيل قطع الأرض والمحاصيل والمواسم والري والتسميد والمصروفات والإنتاج.</p></div>
+      <div class="farm-icon">🚜</div>
+    </section>
+  </main>
+
+  <footer><span>🌱 مساعد الزراعة الذكي</span><span>نسخة تأسيسية تجريبية · 1.0.0</span></footer>
+
+  <dialog id="cropDialog" class="crop-dialog">
+    <button class="dialog-close" id="closeDialog" aria-label="إغلاق">×</button>
+    <div id="cropDetails"></div>
+  </dialog>
+  <script src="app.js"></script>
+</body>
+</html>
